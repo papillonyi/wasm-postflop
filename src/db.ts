@@ -23,6 +23,7 @@ export type DbGroup = {
 class WASMPostflopDB extends Dexie {
   public ranges!: Table<DbItem | DbGroup, number>;
   public configurations!: Table<DbItem | DbGroup, number>;
+  public solvers!: Table<DbItem | DbGroup, number>;
 
   public constructor() {
     super("WASMPostflopDB");
@@ -30,12 +31,14 @@ class WASMPostflopDB extends Dexie {
     this.version(1).stores({
       ranges: "++id, [name0+name1+name2+name3+isGroup]",
       configurations: "++id, [name0+name1+name2+name3+isGroup]",
+      solvers: "++id, [name0+name1+name2+name3+isGroup]",
     });
 
     this.version(2)
       .stores({
         ranges: "++id, [name0+name1+name2+name3+isGroup]",
         configurations: "++id, [name0+name1+name2+name3+isGroup]",
+        solvers: "++id, [name0+name1+name2+name3+isGroup]",
       })
       .upgrade((tx) => {
         return tx

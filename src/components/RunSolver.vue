@@ -1,253 +1,275 @@
 <template>
-  <div class="flex my-1 items-center">
-    Number of threads:
-    <input
-      v-model="numThreads"
-      type="number"
-      :class="
-        'w-20 ml-2 px-2 py-1 rounded-lg text-sm text-center ' +
-        (numThreads < 1 ||
-        numThreads > (isSafari ? 1 : 64) ||
-        numThreads % 1 !== 0
-          ? 'input-error'
-          : '')
-      "
-      min="1"
-      max="64"
-    />
-    <button
-      class="ml-3 button-base button-blue"
-      :disabled="
-        isTreeBuilding ||
-        store.isSolverRunning ||
-        store.isFinalizing ||
-        numThreads < 1 ||
-        numThreads > (isSafari ? 1 : 64) ||
-        numThreads % 1 !== 0
-      "
-      @click="buildTree"
-    >
-      Build New Tree
-    </button>
-  </div>
-
-  <div class="my-1">Status: {{ treeStatus }}</div>
-
-  <div v-if="isTreeBuilt" class="mt-3">
-    <div>
-      Precision mode:
-      <Tippy
-        class="inline-block cursor-help"
-        max-width="500px"
-        placement="bottom"
-        trigger="mouseenter click"
-        :delay="[200, 0]"
-        :interactive="true"
-      >
-        <QuestionMarkCircleIcon class="w-5 h-5 text-gray-600" />
-        <template #content>
-          <div class="px-1 py-0.5 text-justify">
-            Precision mode mainly affects memory usage, but it also has several
-            other effects.
-            <ul class="pl-6 list-disc">
-              <li class="mt-1">
-                32-bit FP (floating-point): This is recommended if the memory
-                usage is below the limit (= 3.9GB). It has about 7 significant
-                digits and better performance.
-              </li>
-              <li class="mt-1">
-                16-bit integer: This setting can help to avoid the memory limit
-                if the 32-bit FP mode is not usable. Since the significant
-                digits are about 4 digits, it is not suitable for satisfying an
-                exploitability target below 0.1%. Performance is also worse than
-                in 32-bit FP mode.
-              </li>
-            </ul>
-          </div>
-        </template>
-      </Tippy>
-    </div>
-    <div class="mt-1 ml-2">
-      <label :class="{ 'cursor-pointer': !store.hasSolverRun }">
+  <div class="flex mt-1">
+    <div class="shrink-0 ml-1">
+      <div class="flex my-1 items-center">
+        Number of threads:
         <input
-          v-model="isCompressionEnabled"
-          class="mr-2 cursor-pointer disabled:cursor-default"
-          type="radio"
-          name="compression"
-          :value="false"
-          :disabled="store.hasSolverRun"
+          v-model="numThreads"
+          type="number"
+          :class="
+            'w-20 ml-2 px-2 py-1 rounded-lg text-sm text-center ' +
+            (numThreads < 1 ||
+            numThreads > (isSafari ? 1 : 64) ||
+            numThreads % 1 !== 0
+              ? 'input-error'
+              : '')
+          "
+          min="1"
+          max="64"
         />
-        <span class="inline-block w-[6.75rem] ml-1">32-bit FP:</span>
-        needs
-        {{
-          memoryUsage >= 1023.5 * 1024 * 1024
-            ? (memoryUsage / (1024 * 1024 * 1024)).toFixed(2) + "GB"
-            : (memoryUsage / (1024 * 1024)).toFixed(0) + "MB"
-        }}
-        RAM
-        {{ memoryUsage > maxMemoryUsage ? "(limit exceeded)" : "" }}
-      </label>
-    </div>
-    <div class="ml-2">
-      <label :class="{ 'cursor-pointer': !store.hasSolverRun }">
-        <input
-          v-model="isCompressionEnabled"
-          class="mr-2 cursor-pointer disabled:cursor-default"
-          type="radio"
-          name="compression"
-          :value="true"
-          :disabled="store.hasSolverRun"
-        />
-        <span class="inline-block w-[6.75rem] ml-1">16-bit integer:</span>
-        needs
-        {{
-          memoryUsageCompressed >= 1023.5 * 1024 * 1024
-            ? (memoryUsageCompressed / (1024 * 1024 * 1024)).toFixed(2) + "GB"
-            : (memoryUsageCompressed / (1024 * 1024)).toFixed(0) + "MB"
-        }}
-        RAM
-        {{ memoryUsageCompressed > maxMemoryUsage ? "(limit exceeded)" : "" }}
-      </label>
-    </div>
-    <div v-if="memoryUsage > maxMemoryUsage" class="mt-1.5">
-      RAM limit: 3.9GB (= 4GB Wasm limit - 0.1GB margin)
-    </div>
-
-    <div class="mt-4">
-      Target exploitability:
-      <Tippy
-        class="inline-block cursor-help"
-        max-width="500px"
-        placement="bottom"
-        trigger="mouseenter click"
-        :delay="[200, 0]"
-        :interactive="true"
-      >
-        <QuestionMarkCircleIcon class="w-5 h-5 text-gray-600" />
-        <template #content>
-          <div class="px-1 py-0.5 text-justify">
-            <div>
-              Specifies the acceptable distance to the Nash equilibrium. A lower
-              value gives more accurate results, but also requires more
-              computation time.
-            </div>
-            <div class="mt-3">
-              <span class="underline">A more detailed description:</span>
-              When a Nash equilibrium solution is obtained, the strategies of
-              both players become MESs (Maximally Exploitative Strategies) to
-              each other. Using this property, we define the distance to the
-              Nash equilibrium of the obtained strategy as follows:
-            </div>
-            <div class="my-1 text-center">
-              Distance = (Opponent's MES EV) - (Opponent's obtained EV).
-            </div>
-            <div>
-              This distance is always non-negative and is zero if and only if
-              the obtained strategy is a part of a particular Nash equilibrium.
-              Exploitability is defined as the average distance of both players.
-            </div>
-          </div>
-        </template>
-      </Tippy>
-      <input
-        v-model="targetExploitability"
-        type="number"
-        :class="
-          'w-20 ml-3 px-2 py-1 rounded-lg text-sm text-center ' +
-          (targetExploitability <= 0 ? 'input-error' : '')
-        "
-        :disabled="store.hasSolverRun && !store.isSolverPaused"
-        min="0"
-        step="0.05"
-      />
-      %
-    </div>
-
-    <div class="mt-1">
-      Maximum number of iterations:
-      <input
-        v-model="maxIterations"
-        type="number"
-        :class="
-          'w-[5.5rem] ml-2 px-2 py-1 rounded-lg text-sm text-center ' +
-          (maxIterations < 0 ||
-          maxIterations % 1 !== 0 ||
-          maxIterations > 100000
-            ? 'input-error'
-            : '')
-        "
-        :disabled="store.hasSolverRun && !store.isSolverPaused"
-        min="0"
-        max="100000"
-      />
-    </div>
-
-    <div class="flex mt-6 gap-3">
-      <button
-        class="button-base button-blue"
-        :disabled="
-          store.hasSolverRun ||
-          memoryUsageSelected > maxMemoryUsage ||
-          targetExploitability <= 0 ||
-          maxIterations < 0 ||
-          maxIterations % 1 !== 0 ||
-          maxIterations > 100000
-        "
-        @click="runSolver"
-      >
-        Run Solver
-      </button>
-      <button
-        class="button-base button-red"
-        :disabled="!store.isSolverRunning"
-        @click="() => (terminateFlag = true)"
-      >
-        Stop
-      </button>
-      <button
-        v-if="!store.isSolverPaused"
-        class="button-base button-green"
-        :disabled="!store.isSolverRunning"
-        @click="() => (pauseFlag = true)"
-      >
-        Pause
-      </button>
-      <button
-        v-else
-        class="button-base button-green"
-        :disabled="
-          targetExploitability <= 0 ||
-          maxIterations < 0 ||
-          maxIterations % 1 !== 0 ||
-          maxIterations > 100000
-        "
-        @click="resumeSolver"
-      >
-        Resume
-      </button>
-    </div>
-
-    <div v-if="store.hasSolverRun" class="mt-6">
-      <div class="flex items-center">
-        <span
-          v-if="store.isSolverRunning || store.isFinalizing"
-          class="spinner inline-block mr-3"
-        ></span>
-        {{
-          store.isSolverRunning
-            ? "Solver running..."
-            : store.isFinalizing
-            ? "Finalizing..."
-            : store.isSolverPaused
-            ? "Solver paused."
-            : "Solver finished."
-        }}
+        <button
+          class="ml-3 button-base button-blue"
+          :disabled="
+            isTreeBuilding ||
+            store.isSolverRunning ||
+            store.isFinalizing ||
+            numThreads < 1 ||
+            numThreads > (isSafari ? 1 : 64) ||
+            numThreads % 1 !== 0
+          "
+          @click="buildTree"
+        >
+          Build New Treea
+        </button>
+        <button class="ml-3 button-base button-blue">Load</button>
       </div>
-      {{ iterationText }}
-      <br />
-      {{ exploitabilityText }}
-      <br />
-      {{ timeText }}
+
+      <div class="my-1">Status: {{ treeStatus }}</div>
+
+      <div v-if="isTreeBuilt" class="mt-3">
+        <div>
+          Precision mode:
+          <Tippy
+            class="inline-block cursor-help"
+            max-width="500px"
+            placement="bottom"
+            trigger="mouseenter click"
+            :delay="[200, 0]"
+            :interactive="true"
+          >
+            <QuestionMarkCircleIcon class="w-5 h-5 text-gray-600" />
+            <template #content>
+              <div class="px-1 py-0.5 text-justify">
+                Precision mode mainly affects memory usage, but it also has
+                several other effects.
+                <ul class="pl-6 list-disc">
+                  <li class="mt-1">
+                    32-bit FP (floating-point): This is recommended if the
+                    memory usage is below the limit (= 3.9GB). It has about 7
+                    significant digits and better performance.
+                  </li>
+                  <li class="mt-1">
+                    16-bit integer: This setting can help to avoid the memory
+                    limit if the 32-bit FP mode is not usable. Since the
+                    significant digits are about 4 digits, it is not suitable
+                    for satisfying an exploitability target below 0.1%.
+                    Performance is also worse than in 32-bit FP mode.
+                  </li>
+                </ul>
+              </div>
+            </template>
+          </Tippy>
+        </div>
+        <div class="mt-1 ml-2">
+          <label :class="{ 'cursor-pointer': !store.hasSolverRun }">
+            <input
+              v-model="isCompressionEnabled"
+              class="mr-2 cursor-pointer disabled:cursor-default"
+              type="radio"
+              name="compression"
+              :value="false"
+              :disabled="store.hasSolverRun"
+            />
+            <span class="inline-block w-[6.75rem] ml-1">32-bit FP:</span>
+            needs
+            {{
+              memoryUsage >= 1023.5 * 1024 * 1024
+                ? (memoryUsage / (1024 * 1024 * 1024)).toFixed(2) + "GB"
+                : (memoryUsage / (1024 * 1024)).toFixed(0) + "MB"
+            }}
+            RAM
+            {{ memoryUsage > maxMemoryUsage ? "(limit exceeded)" : "" }}
+          </label>
+        </div>
+        <div class="ml-2">
+          <label :class="{ 'cursor-pointer': !store.hasSolverRun }">
+            <input
+              v-model="isCompressionEnabled"
+              class="mr-2 cursor-pointer disabled:cursor-default"
+              type="radio"
+              name="compression"
+              :value="true"
+              :disabled="store.hasSolverRun"
+            />
+            <span class="inline-block w-[6.75rem] ml-1">16-bit integer:</span>
+            needs
+            {{
+              memoryUsageCompressed >= 1023.5 * 1024 * 1024
+                ? (memoryUsageCompressed / (1024 * 1024 * 1024)).toFixed(2) +
+                  "GB"
+                : (memoryUsageCompressed / (1024 * 1024)).toFixed(0) + "MB"
+            }}
+            RAM
+            {{
+              memoryUsageCompressed > maxMemoryUsage ? "(limit exceeded)" : ""
+            }}
+          </label>
+        </div>
+        <div v-if="memoryUsage > maxMemoryUsage" class="mt-1.5">
+          RAM limit: 3.9GB (= 4GB Wasm limit - 0.1GB margin)
+        </div>
+
+        <div class="mt-4">
+          Target exploitability:
+          <Tippy
+            class="inline-block cursor-help"
+            max-width="500px"
+            placement="bottom"
+            trigger="mouseenter click"
+            :delay="[200, 0]"
+            :interactive="true"
+          >
+            <QuestionMarkCircleIcon class="w-5 h-5 text-gray-600" />
+            <template #content>
+              <div class="px-1 py-0.5 text-justify">
+                <div>
+                  Specifies the acceptable distance to the Nash equilibrium. A
+                  lower value gives more accurate results, but also requires
+                  more computation time.
+                </div>
+                <div class="mt-3">
+                  <span class="underline">A more detailed description:</span>
+                  When a Nash equilibrium solution is obtained, the strategies
+                  of both players become MESs (Maximally Exploitative
+                  Strategies) to each other. Using this property, we define the
+                  distance to the Nash equilibrium of the obtained strategy as
+                  follows:
+                </div>
+                <div class="my-1 text-center">
+                  Distance = (Opponent's MES EV) - (Opponent's obtained EV).
+                </div>
+                <div>
+                  This distance is always non-negative and is zero if and only
+                  if the obtained strategy is a part of a particular Nash
+                  equilibrium. Exploitability is defined as the average distance
+                  of both players.
+                </div>
+              </div>
+            </template>
+          </Tippy>
+          <input
+            v-model="targetExploitability"
+            type="number"
+            :class="
+              'w-20 ml-3 px-2 py-1 rounded-lg text-sm text-center ' +
+              (targetExploitability <= 0 ? 'input-error' : '')
+            "
+            :disabled="store.hasSolverRun && !store.isSolverPaused"
+            min="0"
+            step="0.05"
+          />
+          %
+        </div>
+
+        <div class="mt-1">
+          Maximum number of iterations:
+          <input
+            v-model="maxIterations"
+            type="number"
+            :class="
+              'w-[5.5rem] ml-2 px-2 py-1 rounded-lg text-sm text-center ' +
+              (maxIterations < 0 ||
+              maxIterations % 1 !== 0 ||
+              maxIterations > 100000
+                ? 'input-error'
+                : '')
+            "
+            :disabled="store.hasSolverRun && !store.isSolverPaused"
+            min="0"
+            max="100000"
+          />
+        </div>
+
+        <div class="flex mt-6 gap-3">
+          <button
+            class="button-base button-blue"
+            :disabled="
+              store.hasSolverRun ||
+              memoryUsageSelected > maxMemoryUsage ||
+              targetExploitability <= 0 ||
+              maxIterations < 0 ||
+              maxIterations % 1 !== 0 ||
+              maxIterations > 100000
+            "
+            @click="runSolver"
+          >
+            Run Solver
+          </button>
+          <button
+            class="button-base button-red"
+            :disabled="!store.isSolverRunning"
+            @click="() => (terminateFlag = true)"
+          >
+            Stop
+          </button>
+          <button
+            v-if="!store.isSolverPaused"
+            class="button-base button-green"
+            :disabled="!store.isSolverRunning"
+            @click="() => (pauseFlag = true)"
+          >
+            Pause
+          </button>
+          <button
+            v-else
+            class="button-base button-green"
+            :disabled="
+              targetExploitability <= 0 ||
+              maxIterations < 0 ||
+              maxIterations % 1 !== 0 ||
+              maxIterations > 100000
+            "
+            @click="resumeSolver"
+          >
+            Resume
+          </button>
+
+          <button class="ml-3 button-base button-blue" @click="saveGameToBin">
+            Save
+          </button>
+        </div>
+
+        <div v-if="store.hasSolverRun" class="mt-6">
+          <div class="flex items-center">
+            <span
+              v-if="store.isSolverRunning || store.isFinalizing"
+              class="spinner inline-block mr-3"
+            ></span>
+            {{
+              store.isSolverRunning
+                ? "Solver running..."
+                : store.isFinalizing
+                ? "Finalizing..."
+                : store.isSolverPaused
+                ? "Solver paused."
+                : "Solver finished."
+            }}
+          </div>
+          {{ iterationText }}
+          <br />
+          {{ exploitabilityText }}
+          <br />
+          {{ timeText }}
+        </div>
+      </div>
+    </div>
+    <div class="flex-grow max-w-[18rem] ml-6">
+      <DbItemPicker
+        store-name="solvers"
+        :value="gameText"
+        :allow-save="gameText !== ''"
+        @load-item="loadGame"
+      />
     </div>
   </div>
 </template>
@@ -273,10 +295,13 @@ import { detect } from "detect-browser";
 
 import { Tippy } from "vue-tippy";
 import { QuestionMarkCircleIcon } from "@heroicons/vue/20/solid";
+import DbItemPicker from "./DbItemPicker.vue";
 
 const maxMemoryUsage = 3.9 * 1024 * 1024 * 1024; // 3.9 GB
 const browser = detect();
 const isSafari = browser && (browser.name === "safari" || browser.os === "iOS");
+
+const gameText = ref("");
 
 const checkConfig = (
   config: ReturnType<typeof useConfigStore>
@@ -393,6 +418,7 @@ const checkConfig = (
 
 export default defineComponent({
   components: {
+    DbItemPicker,
     Tippy,
     QuestionMarkCircleIcon,
   },
@@ -606,6 +632,15 @@ export default defineComponent({
       elapsedTimeMs.value += end - startTime;
     };
 
+    const saveGameToBin = async () => {
+      if (!handler) return;
+      gameText.value =  String(await handler.saveGameToBin());
+    };
+
+    const loadGame = (gameStr: unknown) => {
+      console.log(gameStr)
+    };
+
     return {
       store,
       numThreads,
@@ -624,10 +659,13 @@ export default defineComponent({
       memoryUsageSelected,
       iterationText,
       exploitabilityText,
+      gameText,
       timeText,
       buildTree,
       runSolver,
       resumeSolver,
+      saveGameToBin,
+      loadGame,
     };
   },
 });

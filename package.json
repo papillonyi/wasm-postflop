@@ -6,7 +6,7 @@
   "license": "AGPL-3.0-or-later",
   "scripts": {
     "build": "webpack",
-    "serve": "node server.js",
+    "serve": "npm run build &&node server.js",
     "lint": "eslint src/**/*.{ts,vue}",
     "format": "prettier --write src/**/*.{ts,vue}",
     "wasm": "npm run wasm:range && npm run wasm:tree && npm run wasm:solver-st && npm run wasm:solver-mt",

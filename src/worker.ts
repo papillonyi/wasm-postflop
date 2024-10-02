@@ -124,6 +124,10 @@ const createHandler = (mod: Mod) => {
     getChanceReports(append: Uint32Array, numActions: number) {
       return this.game.get_chance_reports(append, numActions);
     },
+
+    saveGameToBin() {
+      return this.game.save_game_to_bin();
+    },
   };
 };
 

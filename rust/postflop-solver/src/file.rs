@@ -138,6 +138,15 @@ pub fn save_data_to_file<T: FileData, P: AsRef<Path>>(
     let mut writer = BufWriter::new(file);
     save_data_into_std_write(data, memo, &mut writer, compression_level)
 }
+pub fn save_data_to_vec<T: FileData>(
+    data: &T,
+    memo: &str,
+    compression_level: Option<i32>,
+    buffer: &mut Vec<u8>
+) -> Result<(), String> {
+    let mut writer = BufWriter::new(buffer);
+    save_data_into_std_write(data, memo, &mut writer, compression_level)
+}
 
 fn decode_from_std_read<D: Decode, R: Read>(reader: &mut R, err_msg: &str) -> Result<D, String> {
     bincode::decode_from_std_read(reader, bincode::config::standard())

@@ -1,5 +1,6 @@
 extern crate wasm_bindgen;
 use postflop_solver::*;
+extern crate console_error_panic_hook;
 use wasm_bindgen::prelude::*;
 
 #[cfg(not(feature = "rayon"))]
@@ -473,5 +474,13 @@ impl GameManager {
         buf.extend_from_slice(&strategy);
 
         buf.into_boxed_slice()
+    }
+
+    pub fn save_game_to_bin(&self) -> Vec<u8>{
+        console_error_panic_hook::set_once();
+        // println!("saved");
+        let mut buffer  = Vec::new();
+        let result = save_data_to_vec(&self.game, "memo", None, &mut buffer).unwrap();
+        buffer
     }
 }
