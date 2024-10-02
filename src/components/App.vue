@@ -1,5 +1,5 @@
 <template>
-  <div class="min-w-[1080px]" :style="{ height: clientHeight + 'px' }">
+  <div :style="{ height: clientHeight + 'px' }" class="min-w-[1080px]">
     <NavBar />
 
     <div

@@ -105,6 +105,7 @@ export const useStore = defineStore("app", {
 
   getters: {
     hasSolverRun: (state) => {
+      console.log(state.isSolverRunning, state.isFinalizing, state.isSolverPaused,state.isSolverFinished )
       return (
         state.isSolverRunning ||
         state.isFinalizing ||

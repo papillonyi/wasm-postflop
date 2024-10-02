@@ -14,7 +14,7 @@ use crate::game::*;
 use crate::interface::*;
 use bincode::{Decode, Encode};
 use std::fs::File;
-use std::io::{BufReader, BufWriter, Read, Write};
+use std::io::{BufReader, BufWriter, Cursor, Read, Write};
 use std::path::Path;
 
 const MAGIC: u32 = 0x09f15790;
@@ -241,6 +241,20 @@ pub fn load_data_from_file<T: FileData, P: AsRef<Path>>(
 ) -> Result<(T, String), String> {
     let file = File::open(path).map_err(|e| format!("Failed to open file: {}", e))?;
     let mut reader = BufReader::new(file);
+    load_data_from_std_read(&mut reader, max_memory_usage)
+}
+
+pub fn load_data_from_vec<T: FileData>(
+    buffer: &[u8],
+    max_memory_usage: Option<u64>,
+) -> Result<(T, String), String> {
+    // let byte_slice: &[usize] =buffer;
+    // let serialized_data = bincode::serialize(buffer).expect("Serialization failed");
+    let bytes: Vec<u8> = buffer.iter()
+        .flat_map(|&x| x.to_le_bytes().to_vec())
+        .collect();
+    let cursor = Cursor::new(bytes);
+    let mut reader = BufReader::new(cursor);
     load_data_from_std_read(&mut reader, max_memory_usage)
 }
 

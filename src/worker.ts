@@ -128,6 +128,19 @@ const createHandler = (mod: Mod) => {
     saveGameToBin() {
       return this.game.save_game_to_bin();
     },
+
+    loadGameFromBin(data: Uint8Array) {
+      console.log(data.length)
+      return this.game.load_game_from_bin(data);
+    },
+
+    loadOopRange() {
+      return this.game.load_oop_range();
+    },
+
+    loadIpRange() {
+      return this.game.load_ip_range()
+    }
   };
 };
 

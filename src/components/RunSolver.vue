@@ -5,7 +5,6 @@
         Number of threads:
         <input
           v-model="numThreads"
-          type="number"
           :class="
             'w-20 ml-2 px-2 py-1 rounded-lg text-sm text-center ' +
             (numThreads < 1 ||
@@ -14,11 +13,11 @@
               ? 'input-error'
               : '')
           "
-          min="1"
           max="64"
+          min="1"
+          type="number"
         />
         <button
-          class="ml-3 button-base button-blue"
           :disabled="
             isTreeBuilding ||
             store.isSolverRunning ||
@@ -27,6 +26,7 @@
             numThreads > (isSafari ? 1 : 64) ||
             numThreads % 1 !== 0
           "
+          class="ml-3 button-base button-blue"
           @click="buildTree"
         >
           Build New Treea
@@ -40,12 +40,12 @@
         <div>
           Precision mode:
           <Tippy
+            :delay="[200, 0]"
+            :interactive="true"
             class="inline-block cursor-help"
             max-width="500px"
             placement="bottom"
             trigger="mouseenter click"
-            :delay="[200, 0]"
-            :interactive="true"
           >
             <QuestionMarkCircleIcon class="w-5 h-5 text-gray-600" />
             <template #content>
@@ -74,11 +74,11 @@
           <label :class="{ 'cursor-pointer': !store.hasSolverRun }">
             <input
               v-model="isCompressionEnabled"
-              class="mr-2 cursor-pointer disabled:cursor-default"
-              type="radio"
-              name="compression"
-              :value="false"
               :disabled="store.hasSolverRun"
+              :value="false"
+              class="mr-2 cursor-pointer disabled:cursor-default"
+              name="compression"
+              type="radio"
             />
             <span class="inline-block w-[6.75rem] ml-1">32-bit FP:</span>
             needs
@@ -95,11 +95,11 @@
           <label :class="{ 'cursor-pointer': !store.hasSolverRun }">
             <input
               v-model="isCompressionEnabled"
-              class="mr-2 cursor-pointer disabled:cursor-default"
-              type="radio"
-              name="compression"
-              :value="true"
               :disabled="store.hasSolverRun"
+              :value="true"
+              class="mr-2 cursor-pointer disabled:cursor-default"
+              name="compression"
+              type="radio"
             />
             <span class="inline-block w-[6.75rem] ml-1">16-bit integer:</span>
             needs
@@ -122,12 +122,12 @@
         <div class="mt-4">
           Target exploitability:
           <Tippy
+            :delay="[200, 0]"
+            :interactive="true"
             class="inline-block cursor-help"
             max-width="500px"
             placement="bottom"
             trigger="mouseenter click"
-            :delay="[200, 0]"
-            :interactive="true"
           >
             <QuestionMarkCircleIcon class="w-5 h-5 text-gray-600" />
             <template #content>
@@ -159,7 +159,6 @@
           </Tippy>
           <input
             v-model="targetExploitability"
-            type="number"
             :class="
               'w-20 ml-3 px-2 py-1 rounded-lg text-sm text-center ' +
               (targetExploitability <= 0 ? 'input-error' : '')
@@ -167,6 +166,7 @@
             :disabled="store.hasSolverRun && !store.isSolverPaused"
             min="0"
             step="0.05"
+            type="number"
           />
           %
         </div>
@@ -175,7 +175,6 @@
           Maximum number of iterations:
           <input
             v-model="maxIterations"
-            type="number"
             :class="
               'w-[5.5rem] ml-2 px-2 py-1 rounded-lg text-sm text-center ' +
               (maxIterations < 0 ||
@@ -185,14 +184,14 @@
                 : '')
             "
             :disabled="store.hasSolverRun && !store.isSolverPaused"
-            min="0"
             max="100000"
+            min="0"
+            type="number"
           />
         </div>
 
         <div class="flex mt-6 gap-3">
           <button
-            class="button-base button-blue"
             :disabled="
               store.hasSolverRun ||
               memoryUsageSelected > maxMemoryUsage ||
@@ -201,41 +200,38 @@
               maxIterations % 1 !== 0 ||
               maxIterations > 100000
             "
+            class="button-base button-blue"
             @click="runSolver"
           >
             Run Solver
           </button>
           <button
-            class="button-base button-red"
             :disabled="!store.isSolverRunning"
+            class="button-base button-red"
             @click="() => (terminateFlag = true)"
           >
             Stop
           </button>
           <button
             v-if="!store.isSolverPaused"
-            class="button-base button-green"
             :disabled="!store.isSolverRunning"
+            class="button-base button-green"
             @click="() => (pauseFlag = true)"
           >
             Pause
           </button>
           <button
             v-else
-            class="button-base button-green"
             :disabled="
               targetExploitability <= 0 ||
               maxIterations < 0 ||
               maxIterations % 1 !== 0 ||
               maxIterations > 100000
             "
+            class="button-base button-green"
             @click="resumeSolver"
           >
             Resume
-          </button>
-
-          <button class="ml-3 button-base button-blue" @click="saveGameToBin">
-            Save
           </button>
         </div>
 
@@ -265,9 +261,9 @@
     </div>
     <div class="flex-grow max-w-[18rem] ml-6">
       <DbItemPicker
+        :allow-save="gameUintArray.length !== 0"
+        :value="gameUintArray"
         store-name="solvers"
-        :value="gameText"
-        :allow-save="gameText !== ''"
         @load-item="loadGame"
       />
     </div>
@@ -276,32 +272,33 @@
 
 <script lang="ts">
 import { computed, defineComponent, ref } from "vue";
-import { init, handler } from "../global-worker";
+import { handler, init } from "../global-worker";
 import {
-  useStore,
-  useConfigStore,
-  useTmpConfigStore,
   saveConfig,
   saveConfigTmp,
+  useConfigStore,
+  useStore,
+  useTmpConfigStore,
 } from "../store";
 import {
-  MAX_AMOUNT,
   convertBetString,
-  ROOT_LINE_STRING,
   INVALID_LINE_STRING,
+  MAX_AMOUNT,
   readableLineString,
+  ROOT_LINE_STRING,
 } from "../utils";
 import { detect } from "detect-browser";
 
 import { Tippy } from "vue-tippy";
 import { QuestionMarkCircleIcon } from "@heroicons/vue/20/solid";
 import DbItemPicker from "./DbItemPicker.vue";
+import {almostWhole} from "chart.js/helpers";
 
 const maxMemoryUsage = 3.9 * 1024 * 1024 * 1024; // 3.9 GB
 const browser = detect();
 const isSafari = browser && (browser.name === "safari" || browser.os === "iOS");
 
-const gameText = ref("");
+const gameUintArray = ref(new Uint8Array([]));
 
 const checkConfig = (
   config: ReturnType<typeof useConfigStore>
@@ -577,6 +574,7 @@ export default defineComponent({
       exploitabilityUpdated = true;
 
       await resumeSolver();
+      await saveGameToBin();
     };
 
     const resumeSolver = async () => {
@@ -632,13 +630,32 @@ export default defineComponent({
       elapsedTimeMs.value += end - startTime;
     };
 
+
     const saveGameToBin = async () => {
       if (!handler) return;
-      gameText.value =  String(await handler.saveGameToBin());
+      const value = await handler.saveGameToBin();
+      console.log(value);
+      gameUintArray.value = value;
     };
 
-    const loadGame = (gameStr: unknown) => {
-      console.log(gameStr)
+    const loadGame = async (gameData: Uint8Array) => {
+      if (!handler) return;
+      console.log("loading game");
+      const  data  = JSON.parse(JSON.stringify(gameData));
+      const array = Object.keys(data).map((key) => data[key]);
+      const intArray = new Uint8Array(array);
+      await handler.loadGameFromBin(intArray);
+      // await handler.finalize();
+
+      store.isFinalizing = false;
+      store.isSolverRunning = false;
+      store.isSolverPaused = false;
+      store.isSolverFinished = true;
+      const IpRange = await handler.loadOopRange();
+      const OopRange = await handler.loadOopRange();
+      console.log(config.range)
+      console.log(config.rangeRaw)
+
     };
 
     return {
@@ -659,7 +676,7 @@ export default defineComponent({
       memoryUsageSelected,
       iterationText,
       exploitabilityText,
-      gameText,
+      gameUintArray,
       timeText,
       buildTree,
       runSolver,

@@ -476,11 +476,44 @@ impl GameManager {
         buf.into_boxed_slice()
     }
 
-    pub fn save_game_to_bin(&self) -> Vec<u8>{
+    pub fn save_game_to_bin(&mut self) -> Vec<u8>{
         console_error_panic_hook::set_once();
-        // println!("saved");
         let mut buffer  = Vec::new();
-        let result = save_data_to_vec(&self.game, "memo", None, &mut buffer).unwrap();
+        save_data_to_vec(&self.game, "memo", None, &mut buffer).unwrap();
         buffer
     }
+
+
+    pub fn load_game_from_bin(&mut self, buffer: &[u8]){
+        console_error_panic_hook::set_once();
+        check_slice(buffer).unwrap();
+        let game = load_data_from_vec(buffer, None).expect(&format!("Failed to parse '{}' to number", buffer.len()));
+        self.game = game.0;
+    }
+
+    pub fn load_game_board(&self) ->Vec<u8> {
+        self.game.card_config().flop.try_into().unwrap()
+    }
+
+    pub fn load_oop_range(&self) -> String {
+        let oop_range = self.game.card_config().range[0].to_string();
+        oop_range
+    }
+
+    pub fn load_ip_range(&self) -> String {
+        let ip_range = self.game.card_config().range[1].to_string();
+        ip_range
+    }
+
 }
+fn check_slice(slice: &[u8]) -> Result<(), &'static str> {
+    if slice.is_empty() {
+        Err("Slice length is zero")
+    } else {
+        Ok(())
+    }
+}
+
+// fn vec_to_string(vec: Vec<u8>) -> Result<String, std::string::FromUtf8Error> {
+//     String::from_utf8(vec)
+// }

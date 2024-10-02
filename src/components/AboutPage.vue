@@ -7,8 +7,8 @@
       <div>
         This website will no longer be updated. Please see
         <a
-          href="https://github.com/b-inary/postflop-solver/issues/46"
           class="link"
+          href="https://github.com/b-inary/postflop-solver/issues/46"
           target="_blank"
           >this GitHub issue</a
         >
@@ -22,7 +22,7 @@
     <span class="font-bold">WASM Postflop</span> is a free, open-source
     <span class="font-bold">GTO solver</span> that works on web browsers.<br />
     <span class="font-bold">WASM</span> stands for
-    <a href="https://webassembly.org/" class="font-bold link" target="_blank"
+    <a class="font-bold link" href="https://webassembly.org/" target="_blank"
       >WebAssembly</a
     >. It is a modern technology that allows us to distribute a fast, portable,
     and secure program across the web.
@@ -46,8 +46,8 @@
   <p class="mt-4">
     For more detailed information about this project, please see
     <a
-      href="https://github.com/b-inary/wasm-postflop"
       class="link"
+      href="https://github.com/b-inary/wasm-postflop"
       target="_blank"
       >GitHub</a
     >.
@@ -58,8 +58,8 @@
   <ul class="mt-4 ml-8 list-disc">
     <li>
       <a
-        href="https://github.com/b-inary/desktop-postflop"
         class="font-bold link"
+        href="https://github.com/b-inary/desktop-postflop"
         target="_blank"
         >Desktop Postflop</a
       >: A native desktop application for Windows and Linux. Faster and no
@@ -76,8 +76,8 @@
       >
       because nested workers are
       <a
-        href="https://bugs.webkit.org/show_bug.cgi?id=22723"
         class="link"
+        href="https://bugs.webkit.org/show_bug.cgi?id=22723"
         target="_blank"
         >not implemented</a
       >

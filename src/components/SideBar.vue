@@ -54,7 +54,7 @@
 
 <script lang="ts">
 import { computed, defineComponent } from "vue";
-import { SideView, useStore, useConfigStore } from "../store";
+import { SideView, useConfigStore, useStore } from "../store";
 import { cardText } from "../utils";
 
 import RangeMiniViewer from "./RangeMiniViewer.vue";

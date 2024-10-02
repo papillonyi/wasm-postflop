@@ -274,6 +274,30 @@ pub fn finalize<T: Game>(game: &mut T) {
     free_custom_alloc_buffer();
 }
 
+// #[inline]
+// pub fn finalize<T: Game>(game: &mut T) {
+//     if game.is_solved() {
+//         panic!("Game is already solved");
+//     }
+//
+//     if !game.is_ready() {
+//         panic!("Game is not ready");
+//     }
+//
+//     // compute the expected values and save them
+//     for player in 0..2 {
+//         let mut cfvalues = Vec::with_capacity(game.num_private_hands(player));
+//         compute_cfvalue_recursive(
+//             cfvalues.spare_capacity_mut(),
+//             game,
+//             &mut game.root(),
+//             player,
+//             game.initial_weights(player ^ 1),
+//             true,
+//         );
+//     }
+// }
+
 /// Computes the exploitability of the current strategy.
 #[inline]
 pub fn compute_exploitability<T: Game>(game: &T) -> f32 {
