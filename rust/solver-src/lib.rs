@@ -504,6 +504,27 @@ impl GameManager {
         let ip_range = self.game.card_config().range[1].to_string();
         ip_range
     }
+    pub fn starting_pot(&self) -> i32 {
+        self.game.tree_config().starting_pot
+    }
+
+    pub fn effective_stack(&self) -> i32 {
+        self.game.tree_config().effective_stack
+    }
+
+    pub fn add_allin_threshold(&self) -> f64 {
+        self.game.tree_config().add_allin_threshold
+    }
+
+    pub fn force_allin_threshold(&self) -> f64 {
+        self.game.tree_config().force_allin_threshold
+    }
+
+    pub fn merging_threshold(&self) -> f64 {
+        self.game.tree_config().merging_threshold
+    }
+
+
 
 }
 fn check_slice(slice: &[u8]) -> Result<(), &'static str> {

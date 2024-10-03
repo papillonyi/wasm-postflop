@@ -27,7 +27,6 @@
       @update:is-locked="(value) => (isLocked = value)"
       @trigger-update="onUpdateSpot"
     />
-
     <ResultMiddle
       :auto-player-basics="autoPlayerBasics"
       :auto-player-chance="autoPlayerChance"

@@ -233,6 +233,23 @@
           >
             Resume
           </button>
+          <button
+            :disabled="!store.isSolverFinished"
+            class="button-base button-green"
+            @click="downloadGame"
+          >
+            Download
+          </button>
+          <button
+            :disabled="!store.isSolverFinished"
+            class="button-base button-green"
+            @click="loadGame"
+          >
+            Load
+          </button>
+          <div>
+            <input type="file" @change="loadGameFromFile" />
+          </div>
         </div>
 
         <div v-if="store.hasSolverRun" class="mt-6">
@@ -259,14 +276,14 @@
         </div>
       </div>
     </div>
-    <div class="flex-grow max-w-[18rem] ml-6">
-      <DbItemPicker
-        :allow-save="gameUintArray.length !== 0"
-        :value="gameUintArray"
-        store-name="solvers"
-        @load-item="loadGame"
-      />
-    </div>
+    <!--    <div class="flex-grow max-w-[18rem] ml-6">-->
+    <!--      <DbItemPicker-->
+    <!--        :allow-save="gameUintArray.length !== 0"-->
+    <!--        :value="gameUintArray"-->
+    <!--        store-name="solvers"-->
+    <!--        @load-item="loadGame"-->
+    <!--      />-->
+    <!--    </div>-->
   </div>
 </template>
 
@@ -277,6 +294,7 @@ import {
   saveConfig,
   saveConfigTmp,
   useConfigStore,
+  useSavedConfigStore,
   useStore,
   useTmpConfigStore,
 } from "../store";
@@ -299,6 +317,7 @@ const browser = detect();
 const isSafari = browser && (browser.name === "safari" || browser.os === "iOS");
 
 const gameUintArray = ref(new Uint8Array([]));
+const fileContent = ref(new Uint8Array([]));
 
 const checkConfig = (
   config: ReturnType<typeof useConfigStore>
@@ -415,7 +434,6 @@ const checkConfig = (
 
 export default defineComponent({
   components: {
-    DbItemPicker,
     Tippy,
     QuestionMarkCircleIcon,
   },
@@ -423,6 +441,7 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const config = useConfigStore();
+    const savedConfig = useSavedConfigStore();
     const tmpConfig = useTmpConfigStore();
 
     const numThreads = ref((!isSafari && navigator.hardwareConcurrency) || 1);
@@ -440,6 +459,7 @@ export default defineComponent({
     const currentIteration = ref(-1);
     const exploitability = ref(Number.POSITIVE_INFINITY);
     const elapsedTimeMs = ref(-1);
+
 
     let startTime = 0;
     let exploitabilityUpdated = false;
@@ -630,32 +650,89 @@ export default defineComponent({
       elapsedTimeMs.value += end - startTime;
     };
 
-
     const saveGameToBin = async () => {
       if (!handler) return;
       const value = await handler.saveGameToBin();
-      console.log(value);
+      // console.log(value);
       gameUintArray.value = value;
     };
 
-    const loadGame = async (gameData: Uint8Array) => {
+    const downloadGame = async () => {
+      const blob = new Blob([gameUintArray.value], {
+        type: "application/octet-stream",
+      });
+
+      // Create a URL for the blob
+      const url = URL.createObjectURL(blob);
+
+      // Create a link element
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = "filename.bin"; // Set your desired file name
+
+      // Append the link to the body (required for Firefox)
+      document.body.appendChild(link);
+
+      // Trigger the download
+      link.click();
+
+      // Clean up
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    };
+
+    const loadGameFromFile = (event: Event) => {
+      const target = event.target as HTMLInputElement;
+      const files = target.files;
+      console.log(files)
+      console.log(target)
+
+      if (files && files[0]) {
+        const file = files[0];
+        const reader = new FileReader();
+        console.log(file)
+
+        reader.onload = (e: ProgressEvent<FileReader>) => {
+          if (e.target && e.target.result) {
+            const arrayBuffer = e.target.result as ArrayBuffer;
+            fileContent.value = new Uint8Array(arrayBuffer);
+            console.log('File content stored in Uint8Array:', fileContent.value);
+          }
+        };
+
+        reader.readAsArrayBuffer(file);
+      }
+    };
+
+    const loadGame = async () => {
       if (!handler) return;
-      console.log("loading game");
-      const  data  = JSON.parse(JSON.stringify(gameData));
-      const array = Object.keys(data).map((key) => data[key]);
-      const intArray = new Uint8Array(array);
-      await handler.loadGameFromBin(intArray);
+      store.isFinalizing = false;
+      store.isSolverRunning = false;
+      store.isSolverPaused = false;
+      store.isSolverFinished = false;
+      await handler.loadGameFromBin(fileContent.value);
       // await handler.finalize();
+
+      const IpRange = await handler.loadOopRange();
+      const OopRange = await handler.loadOopRange();
+      const gameBoard = await handler.loadGameBoard();
+      const newBoard = Array.from(gameBoard);
+      savedConfig.board = newBoard;
+      const startingPot = await handler.loadStartingPot();
+      const effectiveStack = await handler.loadEffectiveStack();
+      const addAllinThreshold = await handler.loadAddAllinThreshold();
+      const forceAllinThreshold = await handler.loadForceAllinThreshold();
+      const mergingThreshold = await handler.loadMergingThreshold();
+
+      savedConfig.startingPot = startingPot;
+      savedConfig.effectiveStack = effectiveStack;
+
+
 
       store.isFinalizing = false;
       store.isSolverRunning = false;
       store.isSolverPaused = false;
       store.isSolverFinished = true;
-      const IpRange = await handler.loadOopRange();
-      const OopRange = await handler.loadOopRange();
-      console.log(config.range)
-      console.log(config.rangeRaw)
-
     };
 
     return {
@@ -683,6 +760,9 @@ export default defineComponent({
       resumeSolver,
       saveGameToBin,
       loadGame,
+      downloadGame,
+      loadGameFromFile,
+      fileContent
     };
   },
 });

@@ -140,6 +140,30 @@ const createHandler = (mod: Mod) => {
 
     loadIpRange() {
       return this.game.load_ip_range()
+    },
+
+    loadGameBoard() {
+      return this.game.load_game_board()
+    },
+
+    loadStartingPot() {
+      return this.game.starting_pot()
+    },
+
+    loadEffectiveStack() {
+      return this.game.effective_stack();
+    },
+
+    loadAddAllinThreshold() {
+      return this.game.add_allin_threshold();
+    },
+
+    loadForceAllinThreshold() {
+      return this.game.force_allin_threshold();
+    },
+
+    loadMergingThreshold() {
+      return this.game.merging_threshold();
     }
   };
 };
