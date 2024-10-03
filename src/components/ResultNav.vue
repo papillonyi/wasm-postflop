@@ -421,7 +421,7 @@ export default defineComponent({
         stack: config.effectiveStack,
       };
       spots.value = [spot];
-      console.log("get spots", config.startingPot)
+      console.log("get spots", config.startingPot);
 
       await selectSpot(1, true);
       context.emit("update:is-handler-updated", false);

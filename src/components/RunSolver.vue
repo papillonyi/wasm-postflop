@@ -309,8 +309,6 @@ import { detect } from "detect-browser";
 
 import { Tippy } from "vue-tippy";
 import { QuestionMarkCircleIcon } from "@heroicons/vue/20/solid";
-import DbItemPicker from "./DbItemPicker.vue";
-import {almostWhole} from "chart.js/helpers";
 
 const maxMemoryUsage = 3.9 * 1024 * 1024 * 1024; // 3.9 GB
 const browser = detect();
@@ -459,7 +457,6 @@ export default defineComponent({
     const currentIteration = ref(-1);
     const exploitability = ref(Number.POSITIVE_INFINITY);
     const elapsedTimeMs = ref(-1);
-
 
     let startTime = 0;
     let exploitabilityUpdated = false;
@@ -684,19 +681,22 @@ export default defineComponent({
     const loadGameFromFile = (event: Event) => {
       const target = event.target as HTMLInputElement;
       const files = target.files;
-      console.log(files)
-      console.log(target)
+      console.log(files);
+      console.log(target);
 
       if (files && files[0]) {
         const file = files[0];
         const reader = new FileReader();
-        console.log(file)
+        console.log(file);
 
         reader.onload = (e: ProgressEvent<FileReader>) => {
           if (e.target && e.target.result) {
             const arrayBuffer = e.target.result as ArrayBuffer;
             fileContent.value = new Uint8Array(arrayBuffer);
-            console.log('File content stored in Uint8Array:', fileContent.value);
+            console.log(
+              "File content stored in Uint8Array:",
+              fileContent.value
+            );
           }
         };
 
@@ -726,8 +726,6 @@ export default defineComponent({
 
       savedConfig.startingPot = startingPot;
       savedConfig.effectiveStack = effectiveStack;
-
-
 
       store.isFinalizing = false;
       store.isSolverRunning = false;
@@ -762,7 +760,7 @@ export default defineComponent({
       loadGame,
       downloadGame,
       loadGameFromFile,
-      fileContent
+      fileContent,
     };
   },
 });

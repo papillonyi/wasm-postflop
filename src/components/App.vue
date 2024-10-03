@@ -52,6 +52,13 @@
     >
       <ResultViewer style="height: calc(max(100%, 720px - 2.5rem))" />
     </div>
+    <div
+      v-show="store.navView === 'game'"
+      class="overflow-y-auto"
+      style="height: calc(100% - 2.5rem)"
+    >
+      <GameViewer style="height: calc(max(100%, 720px - 2.5rem))" />
+    </div>
   </div>
 </template>
 
@@ -67,9 +74,11 @@ import BoardSelector from "./BoardSelector.vue";
 import TreeConfig from "./TreeConfig.vue";
 import RunSolver from "./RunSolver.vue";
 import ResultViewer from "./ResultViewer.vue";
+import GameViewer from "./GameViewer.vue";
 
 export default defineComponent({
   components: {
+    GameViewer,
     NavBar,
     SideBar,
     AboutPage,
