@@ -153,13 +153,15 @@ import ResultTable from "./ResultTable.vue";
 import ResultCompare from "./ResultCompare.vue";
 import ResultGraphs from "./ResultGraphs.vue";
 import ResultChance from "./ResultChance.vue";
+import GameTable from "./GameTable.vue";
 
 export default defineComponent({
   components: {
+    ResultTable,
+    GameTable,
     ResultNav,
     ResultMiddle,
     ResultBasics,
-    ResultTable,
     ResultCompare,
     ResultGraphs,
     ResultChance,

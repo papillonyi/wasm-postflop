@@ -18,11 +18,12 @@
   </div>
 
   <div v-else class="flex flex-col h-full">
-    <ResultNav
+    <GameNav
       :cards="cards"
       :dealt-card="dealtCard"
       :is-handler-updated="isHandlerUpdated"
       :is-locked="isLocked"
+      :player-position="playerPosition"
       @update:is-handler-updated="(value) => (isHandlerUpdated = value)"
       @update:is-locked="(value) => (isLocked = value)"
       @trigger-update="onUpdateSpot"
@@ -44,24 +45,14 @@
       class="flex flex-grow min-h-0"
     >
       <template v-if="displayMode === 'basics'">
-        <ResultBasics
-          :cards="cards"
-          :current-board="currentBoard"
-          :display-options="displayOptions"
-          :display-player="displayPlayerBasics"
-          :is-compare-mode="false"
-          :results="results"
-          :selected-chance="selectedChance"
-          :selected-spot="selectedSpot"
-          :total-bet-amount="totalBetAmount"
-          style="flex: 4"
-          @update-hover-content="onUpdateHoverContent"
-        />
 
-        <ResultTable
+
+        <GameTable
           :cards="cards"
           :display-player="displayPlayerBasics"
           :hover-content="basicsHoverContent"
+          :player-position="playerPosition"
+          :players-info="playersInfo"
           :results="results"
           :selected-spot="selectedSpot"
           style="flex: 3"
@@ -140,26 +131,27 @@ import {
   DisplayMode,
   DisplayOptions,
   HoverContent,
+  PlayInfo,
   Results,
   Spot,
   SpotChance,
   SpotPlayer,
 } from "../result-types";
-
-import ResultNav from "./ResultNav.vue";
 import ResultMiddle from "./ResultMiddle.vue";
 import ResultBasics from "./ResultBasics.vue";
-import ResultTable from "./ResultTable.vue";
 import ResultCompare from "./ResultCompare.vue";
 import ResultGraphs from "./ResultGraphs.vue";
 import ResultChance from "./ResultChance.vue";
+import GameNav from "./GameNav.vue";
+import { cardText, getRandomItemByWeight } from "../utils";
+import GameTable from "./GameTable.vue";
 
 export default defineComponent({
   components: {
-    ResultNav,
+    GameTable,
+    GameNav,
     ResultMiddle,
     ResultBasics,
-    ResultTable,
     ResultCompare,
     ResultGraphs,
     ResultChance,
@@ -172,6 +164,8 @@ export default defineComponent({
 
     const isHandlerUpdated = ref(false);
     const isLocked = ref(false);
+    const playersInfo = ref<PlayInfo[]>([]);
+    const playerPositionInt = ref(0);
 
     const cards = ref<number[][]>([[], []]);
     const dealtCard = ref(-1);
@@ -209,12 +203,60 @@ export default defineComponent({
       isHandlerUpdated.value = true;
     };
 
+    const initPlayInfo = () => {
+      if (!results.value) return;
+      if (playersInfo.value.length !== 0) return;
+
+      const oopCards = getRandomItemByWeight(
+        cards.value[0],
+        results.value?.weights[0]
+      );
+      const ipCards = getRandomItemByWeight(
+        cards.value[1],
+        results.value?.weights[1]
+      );
+
+      playersInfo.value.push({
+        cards: oopCards,
+        card1: oopCards & 0xff,
+        card2: oopCards >>> 8,
+      });
+
+      playersInfo.value.push({
+        cards: ipCards,
+        card1: ipCards & 0xff,
+        card2: ipCards >>> 8,
+      });
+      playerPositionInt.value = Math.random() < 0.5 ? 0 : 1;
+
+      console.log("postion", playerPositionInt.value, pairText(playersInfo.value[0].cards), pairText(playersInfo.value[1].cards));
+    };
+
+    // results.value?.weights[0].forEach((index) => {
+    //   console.log(cards.value[0][index], results.value?.weights[0][index])
+    //   console.log(
+    //     pairText(cards.value[0][index]),
+    //     results.value?.weights[0][index]
+    //   );
+    // });
+
+    const pairText = (pair: number) => {
+      const card1 = pair & 0xff;
+      const card2 = pair >>> 8;
+      if (card2 !== 0xff) {
+        return [cardText(card2), cardText(card1)];
+      } else {
+        return [cardText(card1)];
+      }
+    };
+
     const clear = () => {
       cards.value = [[], []];
       selectedSpot.value = null;
       selectedChance.value = null;
       results.value = null;
       chanceReports.value = null;
+      playersInfo.value = [];
     };
 
     const onUpdateSpot = (
@@ -235,6 +277,7 @@ export default defineComponent({
       isLocked.value = false;
 
       chanceMode.value = newSelectedChance?.player ?? "";
+      initPlayInfo();
     };
 
     /* Middle Bar */
@@ -289,6 +332,13 @@ export default defineComponent({
       } else {
         return (spot as SpotPlayer).player;
       }
+    });
+
+    const playerPosition = computed(() => {
+      if (playerPositionInt.value === 0) {
+        return "oop";
+      }
+      return "ip";
     });
 
     const autoPlayerChance = computed(() => {
@@ -359,6 +409,8 @@ export default defineComponent({
       basicsHoverContent,
       onUpdateHoverContent,
       onDealCard,
+      playerPosition,
+      playersInfo,
     };
   },
 });

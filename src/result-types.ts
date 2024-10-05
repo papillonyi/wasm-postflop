@@ -1,3 +1,6 @@
+import _default from "chart.js/dist/plugins/plugin.tooltip";
+import numbers = _default.defaults.animations.numbers;
+
 export type Results = {
   currentPlayer: "oop" | "ip" | "chance" | "terminal";
   numActions: number;
@@ -11,6 +14,12 @@ export type Results = {
   strategy: number[];
   actionEv: number[];
 };
+
+export type PlayInfo = {
+  cards: number;
+  card1: number;
+  card2: number;
+}
 
 export type ChanceReports = {
   currentPlayer: "oop" | "ip" | "terminal";
@@ -114,5 +123,10 @@ export type HoverContent = {
   name: string;
   indices: number[];
 };
+
+export interface ActionChance {
+  action: string;
+  chance: number;
+}
 
 export type TableMode = "basics" | "graphs" | "chance";

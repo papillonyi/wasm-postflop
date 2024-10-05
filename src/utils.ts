@@ -334,3 +334,24 @@ export const readableLineString = (s: string): string => {
 
   return ret;
 };
+
+type Items = { [key: number]: number };
+type Weights = { [key: number]: number };
+
+export const getRandomItemByWeight = (
+  items: Items,
+  weights: Weights
+): number => {
+  const keys = Object.keys(items).map(Number);
+  const weightSum = keys.reduce((sum, key) => sum + weights[key], 0);
+  let random = Math.random() * weightSum;
+
+  for (const key of keys) {
+    random -= weights[key];
+    if (random < 0) {
+      return items[key];
+    }
+  }
+
+  throw new Error("Failed to select an item");
+}
