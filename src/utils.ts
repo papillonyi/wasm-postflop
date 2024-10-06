@@ -1,3 +1,5 @@
+import { ActionChance } from "./result-types";
+
 export const ranks = [
   "2",
   "3",
@@ -65,6 +67,16 @@ export const cardPairCellIndex = (card1: number, card2: number) => {
       ? 6 - ((ls * (5 - ls)) / 2 + hs)
       : 11 - (3 * hs + ls - +(hs < ls)),
   };
+};
+
+export const pairText = (pair: number) => {
+  const card1 = pair & 0xff;
+  const card2 = pair >>> 8;
+  if (card2 !== 0xff) {
+    return [cardText(card2), cardText(card1)];
+  } else {
+    return [cardText(card1)];
+  }
 };
 
 export const cardPairOrder = (pair: number) => {
@@ -354,4 +366,36 @@ export const getRandomItemByWeight = (
   }
 
   throw new Error("Failed to select an item");
-}
+};
+
+export const getRandomActionByChanceWithWhitelist = (
+  actions: ActionChance[],
+  whitelist: string[]
+): ActionChance | null => {
+  // Filter actions based on the whitelist
+  const whitelistedActions = actions.filter((action) =>
+    whitelist.includes(action.action)
+  );
+
+  const totalChance = whitelistedActions.reduce(
+    (sum, action) => sum + action.chance,
+    0
+  );
+
+  if (totalChance === 0) {
+    return null; // No valid actions with non-zero chances in the whitelist
+  }
+
+  const randomValue = Math.random() * totalChance;
+  let cumulativeChance = 0;
+
+  for (const action of whitelistedActions) {
+    cumulativeChance += action.chance;
+    if (randomValue <= cumulativeChance) {
+      return action;
+    }
+  }
+
+  // This should never happen if the probabilities sum to 1, but just in case:
+  return whitelistedActions[whitelistedActions.length - 1];
+};

@@ -158,7 +158,6 @@ import GameTable from "./GameTable.vue";
 export default defineComponent({
   components: {
     ResultTable,
-    GameTable,
     ResultNav,
     ResultMiddle,
     ResultBasics,

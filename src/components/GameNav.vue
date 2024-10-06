@@ -94,9 +94,29 @@
             (spot.index === selectedSpotIndex ? '' : 'opacity-70')
           "
         >
-          {{ spot.player.toUpperCase() }}
+          {{
+            gameStore.playerPosition === spot.player
+              ? `${spot.player.toUpperCase()} ${pairText(
+                  gameStore.playersInfo[gameStore.playerPositionInt].cards
+                ).map((card) => card.rank + card.suit)}`
+              : spot.player.toUpperCase()
+          }}
         </div>
         <div class="flex-grow overflow-y-auto">
+          <button
+            v-if="
+              gameStore.playerPosition !== spot.player &&
+              spot.actions.every((action) => !action.isSelected)
+            "
+            :class="'flex w-full px-1.5 rounded-md transition-colors hover:bg-blue-100 '"
+            @click.stop="randomPlay(spot.index, spot.actions)"
+          >
+            <span
+              :class="'pr-0.5 font-semibold group-hover:opacity-100 opacity-70'"
+            >
+              random
+            </span>
+          </button>
           <button
             v-for="action of spot.actions"
             :key="action.index"
@@ -129,6 +149,17 @@
             >
               {{ action.name }}
               {{ action.amount === "0" ? "" : action.amount }}
+            </span>
+            <span
+              v-if="spot.index === selectedSpotIndex && rates != null"
+              :class="
+                'ml-auto pl-1.5 group-hover:opacity-100 ' +
+                (action.isSelected || spot.index === selectedSpotIndex
+                  ? ''
+                  : 'opacity-70')
+              "
+            >
+              [{{ (rates[action.index] * 100).toFixed(1) }}%]
             </span>
           </button>
         </div>
@@ -177,8 +208,14 @@
 
 <script lang="ts">
 import { computed, defineComponent, nextTick, ref, toRefs, watch } from "vue";
-import { useSavedConfigStore } from "../store";
-import { average, cardText, colorString } from "../utils";
+import { useGameStore, useSavedConfigStore } from "../store";
+import {
+  average,
+  cardText,
+  colorString,
+  getRandomActionByChanceWithWhitelist,
+  pairText,
+} from "../utils";
 import { handler } from "../global-worker";
 import {
   ChanceReports,
@@ -241,6 +278,7 @@ const actionColor = (
 };
 
 export default defineComponent({
+  methods: { pairText },
   components: {
     CheckIcon,
     XMarkIcon,
@@ -295,6 +333,7 @@ export default defineComponent({
     const selectedChanceIndex = ref(-1);
     const isDealing = ref(false);
     const canChanceReports = ref(false);
+    const gameStore = useGameStore();
 
     const selectedSpot = computed(() =>
       selectedSpotIndex.value === -1 ||
@@ -351,7 +390,6 @@ export default defineComponent({
         stack: config.effectiveStack,
       };
       spots.value = [spot];
-      console.log("get spots", config.startingPot);
 
       await selectSpot(1, true);
       context.emit("update:is-handler-updated", false);
@@ -862,6 +900,69 @@ export default defineComponent({
       });
     };
 
+    const randomPlay = async (
+      spotIndex: number,
+      actions: {
+        index: number;
+        name: string;
+        amount: string;
+        isSelected: boolean;
+        color: string;
+      }[]
+    ) => {
+      console.log("random play", spotIndex, actions, gameStore.robotActions);
+
+      const actionsWhitelist = actions
+        .filter((action) => {
+          if (!rates.value) {
+            return true;
+          }
+          return (rates.value[action.index] * 100).toFixed(1) !== "0.0";
+        })
+        .map((action) => {
+          if (action.name === "Raise") {
+            return `R ${action.amount}`;
+          } else if (action.name === "Allin") {
+            return `A ${action.amount}`;
+          } else if (action.name === "Bet") {
+            return `B ${action.amount}`;
+          }
+          return action.name;
+        });
+      console.log(actionsWhitelist);
+      // actions.forEach((action) => {
+      //   if (!rates.value) {
+      //     return;
+      //   }
+      //   console.log(
+      //     action.name,
+      //     action.amount,
+      //     (rates.value[action.index] * 100).toFixed(1)
+      //   );
+      // });
+      const selectedAction = getRandomActionByChanceWithWhitelist(
+        gameStore.robotActions,
+        actionsWhitelist
+      );
+      console.log(selectedAction);
+      gameStore.robotActions = [];
+      if (selectedAction) {
+        const finalAction = actions.find((action) => {
+          if (action.name === "Raise") {
+            return `R ${action.amount}` === selectedAction.action;
+          } else if (action.name === "Allin") {
+            return `A ${action.amount}` === selectedAction.action;
+          } else if (action.name === "Bet") {
+            return `B ${action.amount}` === selectedAction.action;
+          }
+          return action.name === selectedAction.action;
+        });
+        if (finalAction) {
+          await play(spotIndex, finalAction.index);
+        }
+      }
+    };
+
     const play = async (spotIndex: number, actionIndex: number) => {
       const spot = spots.value[spotIndex] as SpotPlayer;
 
@@ -977,6 +1078,8 @@ export default defineComponent({
       dealArrow,
       isCardAvailable,
       spotCards,
+      gameStore,
+      randomPlay,
     };
   },
 });

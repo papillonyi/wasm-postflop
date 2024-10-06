@@ -1,5 +1,8 @@
 import { defineStore } from "pinia";
 import { sanitizeBetString } from "./utils";
+import _default from "chart.js/dist/plugins/plugin.tooltip";
+import numbers = _default.defaults.animations.numbers;
+import { ActionChance, PlayInfo } from "./result-types";
 
 export type NavView = "solver" | "results";
 
@@ -105,7 +108,12 @@ export const useStore = defineStore("app", {
 
   getters: {
     hasSolverRun: (state) => {
-      console.log(state.isSolverRunning, state.isFinalizing, state.isSolverPaused,state.isSolverFinished )
+      console.log(
+        state.isSolverRunning,
+        state.isFinalizing,
+        state.isSolverPaused,
+        state.isSolverFinished
+      );
       return (
         state.isSolverRunning ||
         state.isFinalizing ||
@@ -239,5 +247,14 @@ export const useSavedConfigStore = defineStore("savedConfig", {
     expectedBoardLength: 0,
     addedLines: "",
     removedLines: "",
+  }),
+});
+
+export const useGameStore = defineStore("game", {
+  state: () => ({
+    playerPosition: "oop",
+    playerPositionInt: 0,
+    robotActions: [] as ActionChance[],
+    playersInfo: [] as PlayInfo[],
   }),
 });

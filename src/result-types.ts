@@ -19,7 +19,7 @@ export type PlayInfo = {
   cards: number;
   card1: number;
   card2: number;
-}
+};
 
 export type ChanceReports = {
   currentPlayer: "oop" | "ip" | "terminal";
@@ -127,6 +127,7 @@ export type HoverContent = {
 export interface ActionChance {
   action: string;
   chance: number;
+  index: number;
 }
 
 export type TableMode = "basics" | "graphs" | "chance";

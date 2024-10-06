@@ -130,7 +130,7 @@ const createHandler = (mod: Mod) => {
     },
 
     loadGameFromBin(data: Uint8Array) {
-      console.log(data.length)
+      console.log(data.length);
       return this.game.load_game_from_bin(data);
     },
 
@@ -139,15 +139,15 @@ const createHandler = (mod: Mod) => {
     },
 
     loadIpRange() {
-      return this.game.load_ip_range()
+      return this.game.load_ip_range();
     },
 
     loadGameBoard() {
-      return this.game.load_game_board()
+      return this.game.load_game_board();
     },
 
     loadStartingPot() {
-      return this.game.starting_pot()
+      return this.game.starting_pot();
     },
 
     loadEffectiveStack() {
@@ -164,7 +164,7 @@ const createHandler = (mod: Mod) => {
 
     loadMergingThreshold() {
       return this.game.merging_threshold();
-    }
+    },
   };
 };
 

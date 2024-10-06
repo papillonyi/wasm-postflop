@@ -36,7 +36,7 @@
           </select>
         </div>
         <button
-          :disabled="robotActions.length === 0 || playerPosition === displayPlayer"
+          :disabled="gameStore.playerPosition === displayPlayer"
           class="ml-3 button-base button-blue"
           @click="robotDoAction"
         >
@@ -368,7 +368,6 @@ import {
 } from "../utils";
 
 import {
-  ActionChance,
   ChanceReports,
   contentGraphsList,
   HoverContent,
@@ -381,6 +380,7 @@ import {
 
 import { Tippy } from "vue-tippy";
 import { ArrowTopRightOnSquareIcon } from "@heroicons/vue/24/solid";
+import { useGameStore } from "../store";
 
 const barWidthListBasics = ["normalized", "absolute", "full"] as const;
 const contentListBasics = ["percentage", "ev"] as const;
@@ -488,10 +488,7 @@ export default defineComponent({
       type: String as () => TableMode,
       required: true,
     },
-    playerPosition: {
-      type: String as () => "oop" | "ip",
-      required: true,
-    },
+
     graphType: {
       type: String as () => (typeof contentGraphsList)[number],
       default: "eq",
@@ -504,10 +501,7 @@ export default defineComponent({
       type: Array as () => number[][] | null,
       default: null,
     },
-    playersInfo: {
-      type: Array as () => PlayInfo[],
-      required: true,
-    },
+
     selectedSpot: {
       type: Object as () => Spot,
       required: true,
@@ -547,6 +541,7 @@ export default defineComponent({
 
     const optionsStorageKey = `display-options-table-${props.tableMode}`;
     const savedDisplayOptions = localStorage.getItem(optionsStorageKey);
+    const gameStore = useGameStore();
 
     if (savedDisplayOptions) {
       if (props.tableMode !== "chance") {
@@ -573,7 +568,6 @@ export default defineComponent({
 
     const tableDiv = ref<HTMLDivElement | null>(null);
     const tableHeight = ref(0);
-    const robotActions = ref<ActionChance[]>([]);
 
     const assignTableHeight = () => {
       if (tableDiv.value) {
@@ -916,29 +910,35 @@ export default defineComponent({
         emptyBufferTop.value + numDisplayedRows.value + 4 * bufferUnit
       );
 
-      if (props.playerPosition !== props.displayPlayer) {
-        const robotPosition = props.playerPosition === "oop" ? 1 : 0;
-        const handCards = props.playersInfo[robotPosition].cards;
-        ret.forEach((item) => {
-          if (item[0] === handCards) {
-            console.log("renew actions")
-            robotActions.value = [];
-            columns.value.forEach((column, index) => {
-              if (column.type === "action" || column.type === "action-ev") {
-                robotActions.value.push({
-                  action: column.label,
-                  chance: item[INDEX_STRATEGY_BASE + column.index * 2],
-                });
-              }
-            });
-          }
-        });
-      }
-      else {
-        console.log('not robot', props.playerPosition , props.displayPlayer)
+      if (gameStore.playerPosition !== props.displayPlayer) {
+        buildRobotActions(ret);
+      } else {
+        console.log("not robot", gameStore.playerPosition, props.displayPlayer);
       }
       return ret;
     });
+
+    const buildRobotActions = (ret: number[][]) => {
+      const robotPosition = gameStore.playerPosition === "oop" ? 1 : 0;
+      const handCards = gameStore.playersInfo[robotPosition].cards;
+      ret.forEach((item) => {
+        if (item[0] === handCards) {
+          console.log("renew actions");
+          gameStore.robotActions = [];
+          columns.value.forEach((column) => {
+            let actionIndex = 0;
+            if (column.type === "action" || column.type === "action-ev") {
+              gameStore.robotActions.push({
+                action: column.label,
+                index: actionIndex,
+                chance: item[INDEX_STRATEGY_BASE + column.index * 2],
+              });
+              actionIndex++;
+            }
+          });
+        }
+      });
+    };
 
     const { scrollTarget } = toRefs(props);
     watch(scrollTarget, () => {
@@ -952,10 +952,9 @@ export default defineComponent({
       tableDiv.value.scrollTop = Math.max(scrollTop, 0);
     });
 
-
     const robotDoAction = () => {
-      console.log(robotActions.value);
-      robotActions.value = [];
+      console.log(gameStore.robotActions);
+      gameStore.robotActions = [];
     };
 
     const summary = computed(() => {
@@ -1138,8 +1137,8 @@ export default defineComponent({
       actionBarBg,
       exportSummaryButton,
       exportSummary,
-      robotActions,
       robotDoAction,
+      gameStore,
       strTmp: "",
     };
   },

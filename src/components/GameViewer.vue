@@ -45,14 +45,10 @@
       class="flex flex-grow min-h-0"
     >
       <template v-if="displayMode === 'basics'">
-
-
         <GameTable
           :cards="cards"
           :display-player="displayPlayerBasics"
           :hover-content="basicsHoverContent"
-          :player-position="playerPosition"
-          :players-info="playersInfo"
           :results="results"
           :selected-spot="selectedSpot"
           style="flex: 3"
@@ -123,7 +119,7 @@
 
 <script lang="ts">
 import { computed, defineComponent, ref } from "vue";
-import { useStore } from "../store";
+import { useGameStore, useStore } from "../store";
 import { handler } from "../global-worker";
 
 import {
@@ -164,8 +160,9 @@ export default defineComponent({
 
     const isHandlerUpdated = ref(false);
     const isLocked = ref(false);
-    const playersInfo = ref<PlayInfo[]>([]);
-    const playerPositionInt = ref(0);
+    // const playersInfo = ref<PlayInfo[]>([]);
+    // const playerPositionInt = ref(0);
+    const gameStore = useGameStore();
 
     const cards = ref<number[][]>([[], []]);
     const dealtCard = ref(-1);
@@ -205,7 +202,7 @@ export default defineComponent({
 
     const initPlayInfo = () => {
       if (!results.value) return;
-      if (playersInfo.value.length !== 0) return;
+      if (gameStore.playersInfo.length !== 0) return;
 
       const oopCards = getRandomItemByWeight(
         cards.value[0],
@@ -215,21 +212,28 @@ export default defineComponent({
         cards.value[1],
         results.value?.weights[1]
       );
-
-      playersInfo.value.push({
+      gameStore.playersInfo = [];
+      gameStore.playersInfo.push({
         cards: oopCards,
         card1: oopCards & 0xff,
         card2: oopCards >>> 8,
       });
 
-      playersInfo.value.push({
+      gameStore.playersInfo.push({
         cards: ipCards,
         card1: ipCards & 0xff,
         card2: ipCards >>> 8,
       });
-      playerPositionInt.value = Math.random() < 0.5 ? 0 : 1;
+      gameStore.playerPositionInt = Math.random() < 0.5 ? 0 : 1;
+      gameStore.playerPosition =
+        gameStore.playerPositionInt === 0 ? "oop" : "ip";
 
-      console.log("postion", playerPositionInt.value, pairText(playersInfo.value[0].cards), pairText(playersInfo.value[1].cards));
+      console.log(
+        "position",
+        gameStore.playerPositionInt,
+        pairText(gameStore.playersInfo[0].cards),
+        pairText(gameStore.playersInfo[1].cards)
+      );
     };
 
     // results.value?.weights[0].forEach((index) => {
@@ -256,7 +260,7 @@ export default defineComponent({
       selectedChance.value = null;
       results.value = null;
       chanceReports.value = null;
-      playersInfo.value = [];
+      gameStore.playersInfo = [];
     };
 
     const onUpdateSpot = (
@@ -334,13 +338,6 @@ export default defineComponent({
       }
     });
 
-    const playerPosition = computed(() => {
-      if (playerPositionInt.value === 0) {
-        return "oop";
-      }
-      return "ip";
-    });
-
     const autoPlayerChance = computed(() => {
       const spot = selectedSpot.value;
       if (!spot) return "oop";
@@ -409,8 +406,6 @@ export default defineComponent({
       basicsHoverContent,
       onUpdateHoverContent,
       onDealCard,
-      playerPosition,
-      playersInfo,
     };
   },
 });
