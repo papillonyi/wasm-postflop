@@ -1,7 +1,7 @@
 <template>
   <div
     ref="navDiv"
-    class="flex shrink-0 h-[10.5rem] gap-1 p-1 overflow-x-auto whitespace-nowrap snug"
+    class="flex shrink-0 h-[12.5rem] gap-1 p-1 overflow-x-auto whitespace-nowrap snug"
   >
     <div
       v-for="spot in spots"
@@ -39,9 +39,6 @@
           "
         >
           {{ spot.player.toUpperCase() }}
-          <div v-if="spot.type === 'chance'">
-            <button class="ml-1 button-base button-blue">Random</button>
-          </div>
         </div>
         <div
           class="flex flex-col flex-grow px-3 items-center justify-evenly font-semibold"
@@ -94,18 +91,25 @@
             (spot.index === selectedSpotIndex ? '' : 'opacity-70')
           "
         >
-          {{
-            gameStore.playerPosition === spot.player
-              ? `${spot.player.toUpperCase()} ${pairText(
-                  gameStore.playersInfo[gameStore.playerPositionInt].cards
-                ).map((card) => card.rank + card.suit)}`
-              : spot.player.toUpperCase()
-          }}
+          {{ spot.player.toUpperCase() }}
+        </div>
+        <div
+          v-if="playerPosition === spot.player && playersInfo.length !== 0"
+          style="width: 60px"
+        >
+          <span
+            v-for="card in pairText(playersInfo[playerPositionInt].cards)"
+            :key="card.rank + card.suit"
+            :class="card.colorClass"
+            style="float: left; display: inline"
+          >
+            {{ card.rank + card.suit }}
+          </span>
         </div>
         <div class="flex-grow overflow-y-auto">
           <button
             v-if="
-              gameStore.playerPosition !== spot.player &&
+              playerPosition !== spot.player &&
               spot.actions.every((action) => !action.isSelected)
             "
             :class="'flex w-full px-1.5 rounded-md transition-colors hover:bg-blue-100 '"
@@ -181,6 +185,27 @@
             (spot.index === selectedSpotIndex ? '' : 'opacity-70')
           "
         >
+          <div style="width: 60px">
+            <span
+              v-for="card in pairText(playersInfo[0].cards)"
+              :key="card.rank + card.suit"
+              :class="card.colorClass"
+              style="float: left; display: inline"
+            >
+              {{ card.rank + card.suit }}
+            </span>
+          </div>
+          <div style="width: 60px">
+            <span
+              v-for="card in pairText(playersInfo[1].cards)"
+              :key="card.rank + card.suit"
+              :class="card.colorClass"
+              style="float: left; display: inline"
+            >
+              {{ card.rank + card.suit }}
+            </span>
+          </div>
+
           <div v-if="spot.equityOop === 0 || spot.equityOop === 1" class="px-3">
             {{ ["IP", "OOP"][spot.equityOop] }} Wins
           </div>
@@ -214,6 +239,7 @@ import {
   cardText,
   colorString,
   getRandomActionByChanceWithWhitelist,
+  getRandomItemByWeight,
   pairText,
 } from "../utils";
 import { handler } from "../global-worker";
@@ -298,11 +324,6 @@ export default defineComponent({
       required: true,
     },
     dealtCard: {
-      type: Number,
-      required: true,
-    },
-
-    playerPosition: {
       type: Number,
       required: true,
     },
@@ -395,6 +416,42 @@ export default defineComponent({
       context.emit("update:is-handler-updated", false);
     });
 
+    // const restPlayInfo = () => {
+    //   if (!results) return;
+    //   if (gameStore.playersInfo.length !== 0) return;
+    //
+    //   const oopCards = getRandomItemByWeight(
+    //     cards.value[0],
+    //     results.weights[0]
+    //   );
+    //   const ipCards = getRandomItemByWeight(
+    //     cards.value[1],
+    //     results.value?.weights[1]
+    //   );
+    //   gameStore.playersInfo = [];
+    //   gameStore.playersInfo.push({
+    //     cards: oopCards,
+    //     card1: oopCards & 0xff,
+    //     card2: oopCards >>> 8,
+    //   });
+
+    //   gameStore.playersInfo.push({
+    //     cards: ipCards,
+    //     card1: ipCards & 0xff,
+    //     card2: ipCards >>> 8,
+    //   });
+    //   gameStore.playerPositionInt = Math.random() < 0.5 ? 0 : 1;
+    //   gameStore.playerPosition =
+    //     gameStore.playerPositionInt === 0 ? "oop" : "ip";
+    //
+    //   console.log(
+    //     "rest position",
+    //     gameStore.playerPositionInt,
+    //     pairText(gameStore.playersInfo[0].cards),
+    //     pairText(gameStore.playersInfo[1].cards)
+    //   );
+    // };
+
     const selectSpot = async (
       spotIndex: number,
       needSplice: boolean,
@@ -416,6 +473,10 @@ export default defineComponent({
 
       if (spotIndex === 0) {
         await selectSpot(1, true);
+        console.log("root");
+        // restPlayInfo();
+        gameStore.rest = true;
+        // gameStore.playersInfo = [];
         return;
       }
 
@@ -1053,9 +1114,14 @@ export default defineComponent({
       await deal(card);
     });
 
+    const playerPosition = computed(() => gameStore.playerPosition);
+    const playersInfo = computed(() => gameStore.playersInfo);
+    const playerPositionInt = computed(() => gameStore.playerPositionInt);
+
     const spotCards = (spot: SpotRoot | SpotChance) => {
       if (spot.type === "root") {
-        return spot.board.map((card) => cardText(card));
+        return currentBoard.value.map((card) => cardText(card));
+        // return spot.board.map((card) => cardText(card));
       } else if (spot.selectedIndex === -1) {
         return [{ rank: "?", suit: "", colorClass: "text-black" }];
       } else {
@@ -1064,9 +1130,13 @@ export default defineComponent({
     };
 
     return {
+      playerPosition,
+      playerPositionInt,
+      playersInfo,
       navDiv,
       spots,
       rates,
+      currentBoard,
       selectedSpotIndex,
       selectedChanceIndex,
       isDealing,
@@ -1078,9 +1148,15 @@ export default defineComponent({
       dealArrow,
       isCardAvailable,
       spotCards,
-      gameStore,
       randomPlay,
     };
   },
 });
 </script>
+
+<style>
+.card-span {
+  display: inline-block;
+  margin-right: 8px; /* Optional: add some space between cards */
+}
+</style>

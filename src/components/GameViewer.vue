@@ -18,6 +18,9 @@
   </div>
 
   <div v-else class="flex flex-col h-full">
+    <button class="ml-3 button-base button-blue" @click.stop="initPlayInfo">
+      Init
+    </button>
     <GameNav
       :cards="cards"
       :dealt-card="dealtCard"
@@ -104,7 +107,7 @@
       </template>
 
       <template v-else-if="displayMode === 'chance' && selectedChance">
-        <ResultChance
+        <GameChance
           :chance-reports="chanceReports"
           :display-options="displayOptions"
           :display-player="displayPlayerChance"
@@ -141,16 +144,17 @@ import ResultChance from "./ResultChance.vue";
 import GameNav from "./GameNav.vue";
 import { cardText, getRandomItemByWeight } from "../utils";
 import GameTable from "./GameTable.vue";
+import GameChance from "./GameChance.vue";
 
 export default defineComponent({
   components: {
+    GameChance,
     GameTable,
     GameNav,
     ResultMiddle,
     ResultBasics,
     ResultCompare,
     ResultGraphs,
-    ResultChance,
   },
 
   setup() {
@@ -202,7 +206,10 @@ export default defineComponent({
 
     const initPlayInfo = () => {
       if (!results.value) return;
-      if (gameStore.playersInfo.length !== 0) return;
+      // if (!gameStore.rest) {
+      //   console.log("dont rest");
+      //   return;
+      // }
 
       const oopCards = getRandomItemByWeight(
         cards.value[0],
@@ -234,6 +241,7 @@ export default defineComponent({
         pairText(gameStore.playersInfo[0].cards),
         pairText(gameStore.playersInfo[1].cards)
       );
+      // gameStore.rest = false;
     };
 
     // results.value?.weights[0].forEach((index) => {
@@ -281,7 +289,7 @@ export default defineComponent({
       isLocked.value = false;
 
       chanceMode.value = newSelectedChance?.player ?? "";
-      initPlayInfo();
+      // initPlayInfo();
     };
 
     /* Middle Bar */
@@ -406,6 +414,7 @@ export default defineComponent({
       basicsHoverContent,
       onUpdateHoverContent,
       onDealCard,
+      initPlayInfo,
     };
   },
 });

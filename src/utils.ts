@@ -399,3 +399,8 @@ export const getRandomActionByChanceWithWhitelist = (
   // This should never happen if the probabilities sum to 1, but just in case:
   return whitelistedActions[whitelistedActions.length - 1];
 };
+
+export const getRandomItem = <T>(array: T[]): T => {
+  const randomIndex = Math.floor(Math.random() * array.length);
+  return array[randomIndex];
+};

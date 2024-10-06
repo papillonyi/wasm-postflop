@@ -905,10 +905,11 @@ export default defineComponent({
     };
 
     const resultsRendered = computed(() => {
-      const ret = resultsSorted.value.slice(
-        Math.max(emptyBufferTop.value, 0),
-        emptyBufferTop.value + numDisplayedRows.value + 4 * bufferUnit
-      );
+      const ret = resultsSorted.value.slice();
+      // Math.max(emptyBufferTop.value, 0),
+      // emptyBufferTop.value + numDisplayedRows.value + 4 * bufferUnit
+      // ();
+      console.log(ret.length);
 
       if (gameStore.playerPosition !== props.displayPlayer) {
         buildRobotActions(ret);
@@ -920,6 +921,9 @@ export default defineComponent({
 
     const buildRobotActions = (ret: number[][]) => {
       const robotPosition = gameStore.playerPosition === "oop" ? 1 : 0;
+      if (gameStore.playersInfo.length === 0) {
+        return;
+      }
       const handCards = gameStore.playersInfo[robotPosition].cards;
       ret.forEach((item) => {
         if (item[0] === handCards) {
@@ -954,7 +958,8 @@ export default defineComponent({
 
     const robotDoAction = () => {
       console.log(gameStore.robotActions);
-      gameStore.robotActions = [];
+
+      // gameStore.robotActions = [];
     };
 
     const summary = computed(() => {
